@@ -4,16 +4,22 @@ const express = require('express');
 const svgCaptcha = require('svg-captcha');
 const bodyParser = require('body-parser');
 const fetch = require('node-fetch');
+const path = require('path');
 
 const app = express();
 app.use(bodyParser.json());
-app.use(express.static(__dirname));
+app.use(express.static(__dirname)); // serve static files like verify.html
 
 const PORT = process.env.PORT || 3000;
 const VERIFY_ROLE_NAME = "Verified";
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers] });
 
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers] });
 let captchaTexts = {}; // { discordId: captchaText }
+
+// --- Root Weiterleitung ---
+app.get('/', (req, res) => {
+    res.redirect('/verify.html');
+});
 
 // --- Slash-Command registrieren ---
 client.once('ready', async () => {
@@ -83,6 +89,13 @@ app.get('/auth/discord/callback', async (req, res) => {
     res.redirect(`/verify.html?discordId=${userData.id}`);
 });
 
+// --- Captcha generieren ---
+app.get('/getcaptcha/:discordId', (req, res) => {
+    const captcha = svgCaptcha.create({ size: 5, noise: 2 });
+    captchaTexts[req.params.discordId] = captcha.text;
+    res.json({ captcha: captcha.data });
+});
+
 // --- Captcha prüfen + Rolle vergeben ---
 app.post('/verifycaptcha', async (req, res) => {
     const { discordId, input } = req.body;
@@ -110,12 +123,6 @@ app.post('/verifycaptcha', async (req, res) => {
     }
 });
 
-// --- Captcha generieren ---
-app.get('/getcaptcha/:discordId', (req, res) => {
-    const captcha = svgCaptcha.create({ size: 5, noise: 2 });
-    captchaTexts[req.params.discordId] = captcha.text;
-    res.json({ captcha: captcha.data });
-});
-
-app.listen(PORT, () => console.log(`Webserver läuft auf https://localhost:${PORT}`));
+// --- Starte Webserver ---
+app.listen(PORT, () => console.log(`Webserver läuft auf Port ${PORT}`));
 client.login(process.env.DISCORD_TOKEN);

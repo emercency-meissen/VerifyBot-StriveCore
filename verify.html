@@ -2,62 +2,40 @@
 <html>
 <head><title>Verify</title></head>
 <body>
-<h2>Schritt 1: E-Mail eingeben</h2>
-<input type="email" id="email" placeholder="Email" required>
-<button id="sendCode">Code senden</button>
-
-<div id="codeSection" style="display:none">
-<h2>Schritt 2: Code eingeben</h2>
-<input type="text" id="code" required placeholder="6-stelliger Code">
-<button id="verifyCode">Überprüfen</button>
-</div>
+<h2>Schritt 1: Mit Discord verbinden</h2>
+<a href="/auth/discord"><button>Mit Discord verbinden</button></a>
 
 <div id="captchaSection" style="display:none">
-<h2>Schritt 3: Captcha</h2>
+<h2>Schritt 2: Captcha lösen</h2>
 <img id="captchaImg">
-<input type="text" id="captchaInput" required placeholder="Buchstaben">
-<input type="text" id="discordId" required placeholder="Discord ID">
+<input type="text" id="captchaInput" placeholder="Buchstaben" required>
 <button id="captchaSubmit">Prüfen</button>
 </div>
 
 <script>
-document.getElementById('sendCode').onclick = async () => {
-    const email = document.getElementById('email').value;
-    const res = await fetch('/sendcode', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({email})
-    });
-    const data = await res.json();
-    if (data.success) document.getElementById('codeSection').style.display = 'block';
-};
+const urlParams = new URLSearchParams(window.location.search);
+const discordId = urlParams.get('discordId');
 
-document.getElementById('verifyCode').onclick = async () => {
-    const email = document.getElementById('email').value;
-    const code = document.getElementById('code').value;
-    const res = await fetch('/verifycode', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({email, code})
-    });
-    const data = await res.json();
-    if (data.success) {
-        document.getElementById('captchaImg').src = 'data:image/svg+xml;base64,' + btoa(data.captcha);
-        document.getElementById('captchaSection').style.display = 'block';
-    } else alert('Code falsch');
-};
+if(discordId) {
+    const captchaSection = document.getElementById('captchaSection');
+    captchaSection.style.display = 'block';
+
+    fetch(`/getcaptcha/${discordId}`)
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('captchaImg').src = 'data:image/svg+xml;base64,' + btoa(data.captcha);
+        });
+}
 
 document.getElementById('captchaSubmit').onclick = async () => {
-    const email = document.getElementById('email').value;
     const input = document.getElementById('captchaInput').value;
-    const discordId = document.getElementById('discordId').value;
     const res = await fetch('/verifycaptcha', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({email, input, discordId})
+        body:JSON.stringify({discordId, input})
     });
     const data = await res.json();
-    if (data.success) alert('Erfolgreich verifiziert!');
+    if(data.success) alert('Erfolgreich verifiziert!');
     else alert('Captcha falsch');
 };
 </script>

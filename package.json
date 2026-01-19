@@ -1,7 +1,7 @@
 {
   "name": "verifybot",
   "version": "1.0.0",
-  "description": "Discord Verify Bot mit Web-Verify, Email, Captcha, OAuth2",
+  "description": "Discord Verify Bot ohne Email",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
@@ -9,7 +9,6 @@
   "dependencies": {
     "discord.js": "^14.15.1",
     "express": "^4.18.2",
-    "nodemailer": "^6.9.5",
     "svg-captcha": "^1.4.0",
     "dotenv": "^16.3.1",
     "body-parser": "^1.20.2",
